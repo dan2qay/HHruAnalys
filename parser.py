@@ -1,4 +1,4 @@
-#import requests
+# import requests
 import csv
 import re
 import json
@@ -59,41 +59,47 @@ with open('all_vacancies_dict.json', 'r', encoding='utf-8') as file:
 counter = 0
 
 for vacancy_name, vacancy_link in all_vacancies_dict.items():
-        #print(vacancy_text, vacancy_link)
+    # print(vacancy_text, vacancy_link)
 
-        if counter == 10: # Поставили ограничение на 1 страницу поиска информации.
+    # Поставили ограничение на 1 страницу поиска информации.
 
-            req = requests.get(vacancy_link, headers=headers)
-            src = req.text
+    req = requests.get(vacancy_link, headers=headers)
+    src = req.text
 
+    requirements = ''
 
-            requirements = ''
+    with open("index.html", "w", encoding="utf-8") as file:
+        file.write(src)
+    with open("index.html", "r", encoding='utf-8') as file:
+        src = file.read()
+    soup = BeautifulSoup(src, "lxml")
 
-            with open("index.html", "w", encoding="utf-8") as file:
-                file.write(src)
-            with open("index.html", "r", encoding='utf-8') as file:
-                src = file.read()
-            soup = BeautifulSoup(src, "lxml")
+    requirements_tables = soup.find("div", class_="vacancy-description").find_all("ul")
+    work_experience = soup.find(text='Требуемый опыт работы').find_next().text
+    salary = soup.find(class_="vacancy-salary").find("span").text
+    key_skills = []
 
-            requirements_tables = soup.find("div", class_="vacancy-description").find_all("ul")
-            work_experience = soup.find(text='Требуемый опыт работы').find_next().text
-            salary = soup.find(class_="vacancy-salary").find("span").text
-            key_skills_blocks = soup.find("div", class_="bloko-tag-list").find_all(
-                class_='bloko-tag__section')
-            key_skills = []
+    if soup.find("div", class_="bloko-tag-list") is not None:
+        key_skills_blocks = soup.find("div", class_="bloko-tag-list").find_all(
+            class_='bloko-tag__section')
+        for block in key_skills_blocks:
+            key_skills.append(block.text)
 
-            for block in key_skills_blocks:
-                key_skills.append(block.text)
+    for ul in requirements_tables:
+        for li in ul.find_all("li"):
+            requirements += li.text.strip() + " "
 
-            for ul in requirements_tables:
-                for li in ul.find_all("li"):
-                    requirements += li.text.strip()
-
-            print(vacancy_name, vacancy_link, requirements, work_experience,  key_skills, salary,
-                  sep='\n')
-            with open('/data/vacancies.csv', 'w', encoding='utf-8') as file:
-                writer = csv.writer(file)
-        counter += 1
-
-
-
+    print(vacancy_name, vacancy_link, requirements, work_experience, key_skills, salary,
+          sep='\n')
+    with open('data/vacancies.csv', 'r', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=";")
+        writer.writerow(
+            (
+                vacancy_name,
+                vacancy_link,
+                work_experience,
+                ','.join(key_skills),
+                salary
+            )
+        )
+    counter += 1
