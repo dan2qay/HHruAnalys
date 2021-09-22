@@ -2,14 +2,15 @@
 import re
 import json
 
+import requests
 from bs4 import BeautifulSoup
 
 # url = "https://hh.ru/vacancies/data-scientist"
-# headers = {
-#     "Accept": "*/*",
-#     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
-#                   "like Gecko) Chrome/92.0.4515.159 YaBrowser/21.8.3.614 Yowser/2.5 Safari/537.36"
-# }
+headers = {
+    "Accept": "*/*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
+                  "like Gecko) Chrome/92.0.4515.159 YaBrowser/21.8.3.614 Yowser/2.5 Safari/537.36"
+}
 #
 # req = requests.get(url, headers=headers)
 # src = req.text
@@ -51,8 +52,29 @@ from bs4 import BeautifulSoup
 #
 #
 # print(all_vacancies_dict)
+with open('all_vacancies_dict.json', 'r', encoding='utf-8') as file:
+    all_vacancies_dict = json.load(file)
 
+counter = 0
 
+for vacancy_text, vacancy_link in all_vacancies_dict.items():
+        #print(vacancy_text, vacancy_link)
+
+        if counter == 1:
+
+            req = requests.get(vacancy_link, headers=headers)
+            src = req.text
+            with open("index.html", "w", encoding="utf-8") as file:
+                file.write(src)
+            with open("index.html", "r", encoding='utf-8') as file:
+                src = file.read()
+            soup = BeautifulSoup(src, "lxml")
+
+            uls = soup.find("div", class_="vacancy-description").find_all("ul")
+            for ul in uls:
+                for li in ul.find_all("li"):
+                    print(li.text)
+        counter += 1
 
 
 
